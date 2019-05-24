@@ -24,7 +24,7 @@ class Node:
 
     def print_blockchian_elements(self):
         """Prints all the blocks in the list."""
-        for block in self.blockchain.get_chain():
+        for block in self.blockchain.chain:
             print("Printing all the blocks!")
             print(block)
         else:
@@ -74,7 +74,7 @@ class Node:
                 self.print_blockchian_elements()
                 break
 
-            if not Verification.verify_chain(self.blockchain.get_chain()):
+            if not Verification.verify_chain(self.blockchain.chain):
                 self.print_blockchian_elements()
                 print("Invalid Blockchain!")
                 break
