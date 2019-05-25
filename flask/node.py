@@ -105,7 +105,7 @@ def add_transaction():
             'funds': blockchain.get_balance()
         }
         return jsonify(response), 201
-        
+
     else:
         response = {
             'message': "Creating a transaction failed"
@@ -134,6 +134,16 @@ def mine():
         }
         return jsonify(response), 500
 
+
+@app.route('/transactions', methods=['GET'])
+def get_open_transactions():
+    transactions = blockchain.get_open_transaction()
+    dict_transactions = [tx.__dict__ for tx in transactions]
+    response = {
+        'message': 'Transaction fetched sucessfully',
+        'transactions': dict_transactions
+    }
+    return jsonify(response), 200
 
 @app.route('/chain', methods=['GET'])
 def get_chain():
