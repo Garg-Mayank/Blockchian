@@ -1,14 +1,16 @@
 from uuid import uuid4
 
 from blockChain import Blockchain
-from verification import Verification
+from utility.verification import Verification
+from wallet import Wallet
 
 class Node:
 
     def __init__(self):
         #self.id = str(uuid4())
-        self.id = "Mayank"
-        self.blockchain = Blockchain(self.id)
+        self.wallet = Wallet()
+        self.wallet.create_keys()
+        self.blockchain = Blockchain(self.wallet.public_key)
         
 
     def get_transaction_value(self):
@@ -24,7 +26,7 @@ class Node:
 
     def print_blockchian_elements(self):
         """Prints all the blocks in the list."""
-        for block in self.blockchain.chain:
+        for block in self.blockchain.get_chain():
             print("Printing all the blocks!")
             print(block)
         else:
@@ -39,6 +41,9 @@ class Node:
             print("2. Mine a new block.")
             print("3. Output the blockchain block")
             print("4. Check transaction validity")
+            print("5. Create new Wallet")
+            print("6. Load Wallet")
+            print("7. Save Keys")
             print("q. Quit")
             user_choice = self.get_user_choice()
             print()
@@ -47,14 +52,16 @@ class Node:
                 tx_data = self.get_transaction_value()
                 recipient, amount = tx_data
                 # Add the transaction amount to the blockchain.
-                if self.blockchain.add_transaction(recipient, sender = self.id, amount=amount):
+                signature = self.wallet.sign_transaction(self.wallet.public_key, recipient, amount)
+                if self.blockchain.add_transaction(recipient, sender = self.wallet.public_key, signature = signature, amount=amount):
                     print("Added Transaction!!")
                 else:
                     print("Transaction Failed!")
                 print(self.blockchain.get_open_transaction())
 
             elif user_choice == '2':
-                self.blockchain.mine_block()
+                if not self.blockchain.mine_block():
+                    print("Mining Failed, No Wallet")
 
             elif user_choice == '3':
                 self.print_blockchian_elements()
@@ -65,6 +72,17 @@ class Node:
                 else:
                     print('There are invalid transactions!')
 
+            elif user_choice == '5':
+                self.wallet.create_keys()
+                self.blockchain = Blockchain(self.wallet.public_key)
+
+            elif user_choice == '6':
+                self.wallet.load_keys()
+                self.blockchain = Blockchain(self.wallet.public_key)
+
+            elif user_choice == '7':
+                self.wallet.save_keys()
+
             elif user_choice == 'q':
                 waiting_for_input = False
 
@@ -74,16 +92,17 @@ class Node:
                 self.print_blockchian_elements()
                 break
 
-            if not Verification.verify_chain(self.blockchain.chain):
+            if not Verification.verify_chain(self.blockchain.get_chain()):
                 self.print_blockchian_elements()
                 print("Invalid Blockchain!")
                 break
 
             print('Balance of {}: {:6.4f}'.format(
-                self.id, self.blockchain.get_balance()))
+                self.wallet.public_key, self.blockchain.get_balance()))
         else:
             print("User Logged Out!")
 
 
-node = Node()
-node.listen_for_input()
+if __name__ == "__main__":
+    node = Node()
+    node.listen_for_input()
