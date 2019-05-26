@@ -20,8 +20,9 @@ class Blockchain:
         self.chain = [genesis_block]
         # Unhandeled transaction.                       Making it private.
         self.__open_transaction = list()
-        self.load_data()
         self.hosting_node = hosting_node_ID
+        self.__peer_nodes = set()
+        self.load_data()
 
     @property
     def chain(self):
@@ -52,13 +53,15 @@ class Blockchain:
                         block['index'], block['previous_hash'], converted_tx, block['proof'], block['timestamp'])
                     updated_blockchain.append(updated_block)
                 self.chain = updated_blockchain
-                open_transaction = json.loads(file_content[1])
+                open_transaction = json.loads(file_content[1][:-1])
                 updated_transactions = list()
                 for tx in open_transaction:
                     updated_transaction = Transaction(
                         tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
                     updated_transactions.append(updated_transaction)
                 self.__open_transaction = updated_transactions
+                peer_nodes = json.loads(file_content[2])
+                self.__peer_nodes = set(peer_nodes)
 
         except (IOError, IndexError):
             print("Exception HANDLED")
@@ -75,6 +78,8 @@ class Blockchain:
                 new_saveable_tx = [
                     block.__dict__ for block in self.__open_transaction]
                 file.write(json.dumps(new_saveable_tx))
+                file.write('\n')
+                file.write(json.dumps(list(self.__peer_nodes)))
         except IOError:
             print("Saving Failed!!")
 
@@ -124,11 +129,6 @@ class Blockchain:
             :recipient: The recipient of the coin.
             :amount: The amount of coin sent with the transaction (default = 1.0).
         """
-        # transaction = {
-        #    'sender': sender,
-        #    'recipient': recipient,
-        #    'amount': amount
-        # }
         if self.hosting_node == None:
             return False
 
@@ -150,11 +150,6 @@ class Blockchain:
         # Miners should be rewarded for there work.
         reward_transaction = Transaction(
             "MINING", self.hosting_node, '', MINING_REWARD)
-        # reward_transaction = {
-        #    'sender': "MINING",
-        #    'recipient': owner,
-        #    'amount': MINING_REWARD
-        # }
         # Copy transaction instead of manipulating the orignal "open_transactions".
         copied_transaction = self.__open_transaction[:]
         for tx in copied_transaction:
@@ -169,3 +164,37 @@ class Blockchain:
         self.__open_transaction = []
         self.save_data()
         return block
+
+    def add_peer_node(self, node):
+        """Adds a new node to the peer node set.
+
+        Arguments:
+            :node: Node URL which should be added.
+        """
+        self.__peer_nodes.add(node)
+        self.save_data()
+
+    def check_peer_nodes(self, node):
+        """Check whether the node exists or not"""
+        if node in self.__peer_nodes:
+            return self.__peer_nodes
+        else:
+            return False
+
+    def remove_peer_nodes(self, node):
+        """Removes a node from the peer node set.
+
+        Arguments:
+            :node: Node URL which should be removed.
+        """
+        if self.check_peer_nodes(node):
+            self.__peer_nodes.discard(node)
+            self.save_data()
+            return True
+        else:
+            self.save_data()
+            return False
+
+    def get_peer_nodes(self):
+        """Return list of all connected peer nodes."""
+        return list(self.__peer_nodes)
