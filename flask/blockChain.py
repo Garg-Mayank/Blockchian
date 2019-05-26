@@ -13,15 +13,16 @@ MINING_REWARD = 10
 
 
 class Blockchain:
-    def __init__(self, hosting_node_ID):
+    def __init__(self, public_key, node_ID):
         # The starting block of blockchain.
         genesis_block = Block(0, "", [], 100, 0)
         # Initailizing our (empty) blockchain list.     Making it private.
         self.chain = [genesis_block]
         # Unhandeled transaction.                       Making it private.
         self.__open_transaction = list()
-        self.hosting_node = hosting_node_ID
+        self.public_key = public_key
         self.__peer_nodes = set()
+        self.node_id = node_ID
         self.load_data()
 
     @property
@@ -39,7 +40,7 @@ class Blockchain:
         """Initialize by loading data from a file"""
         try:
 
-            with open("blockchain.txt", 'r') as file:
+            with open("blockchain-{}.txt".format(self.node_id), mode='r') as file:
                 file_content = file.readlines()
 
                 # To remove the "\n" from the load, we are using range selector.
@@ -70,7 +71,7 @@ class Blockchain:
     def save_data(self):
         try:
             # We can use any extension.
-            with open("blockchain.txt", 'w') as file:
+            with open("blockchain-{}.txt".format(self.node_id), mode='w') as file:
                 new_saveable_chain = [block.__dict__ for block in [Block(new_block.index, new_block.previous_hash, [
                     tx.__dict__ for tx in new_block.transactions], new_block.proof, new_block.timestamp) for new_block in self.__chain]]
                 file.write(json.dumps(new_saveable_chain))
@@ -96,9 +97,9 @@ class Blockchain:
     def get_balance(self):
         """Name of the participant as the parameter.
         """
-        if self.hosting_node == None:
+        if self.public_key == None:
             return None
-        participant = self.hosting_node
+        participant = self.public_key
         tx_sender = [[tx.amount for tx in block.transactions
                       if tx.sender == participant] for block in self.__chain]
         open_tx_sender = [tx.amount
@@ -129,7 +130,7 @@ class Blockchain:
             :recipient: The recipient of the coin.
             :amount: The amount of coin sent with the transaction (default = 1.0).
         """
-        if self.hosting_node == None:
+        if self.public_key == None:
             return False
 
         transaction = Transaction(sender, recipient, signature, amount)
@@ -140,7 +141,7 @@ class Blockchain:
         return False
 
     def mine_block(self):
-        if self.hosting_node == None:
+        if self.public_key == None:
             return None
 
         last_block = self.__chain[-1]
@@ -149,7 +150,7 @@ class Blockchain:
         proof = self.proof_of_work()
         # Miners should be rewarded for there work.
         reward_transaction = Transaction(
-            "MINING", self.hosting_node, '', MINING_REWARD)
+            "MINING", self.public_key, '', MINING_REWARD)
         # Copy transaction instead of manipulating the orignal "open_transactions".
         copied_transaction = self.__open_transaction[:]
         for tx in copied_transaction:
