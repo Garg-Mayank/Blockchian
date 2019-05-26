@@ -13,9 +13,9 @@ class Verification:
         """Validate a proof.
 
         Arguments:
-            transactions: Transaction of the block 
+            transactions: Transaction of the block.
             last_hash: The stored previous_hash.
-            proof: The proof we are testing. 
+            proof: The proof number we are testing. 
         """
         guess = (str([tx.to_ordered_dict() for tx in transactions]) +
                  str(last_hash) + str(proof)).encode()
@@ -48,7 +48,7 @@ class Verification:
             get_balance:
         """
         if check_funds:
-            sender_balance = get_balance()
+            sender_balance = get_balance(transaction.sender)
             print(sender_balance)
             return sender_balance >= transaction.amount and Wallet.verify_transaction(transaction)
         else:
