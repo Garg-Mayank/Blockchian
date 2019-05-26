@@ -1,6 +1,7 @@
 from functools import reduce
 import hashlib
 import json
+import requests
 
 from utility.hash_utils import hash_block
 from utility.verification import Verification
@@ -85,6 +86,7 @@ class Blockchain:
             print("Saving Failed!!")
 
     def proof_of_work(self):
+        """Generate a proof of work for the open transactions"""
         last_block = self.__chain[-1]
         last_hash = hash_block(last_block)
         proof = 0
@@ -94,12 +96,16 @@ class Blockchain:
             # print(proof)
         return proof
 
-    def get_balance(self):
-        """Name of the participant as the parameter.
+    def get_balance(self, sender=None):
+        """Calculate and return balance of the participant.
         """
-        if self.public_key == None:
-            return None
-        participant = self.public_key
+        if sender == None:
+            if self.public_key == None:
+                return None
+            participant = self.public_key
+        else:
+            participant = sender
+
         tx_sender = [[tx.amount for tx in block.transactions
                       if tx.sender == participant] for block in self.__chain]
         open_tx_sender = [tx.amount
@@ -122,13 +128,14 @@ class Blockchain:
             return None
         return self.__chain[-1]
 
-    def add_transaction(self, recipient, sender, signature, amount=1.0):
+    def add_transaction(self, recipient, sender, signature, amount=1.0, is_receiving= False):
         """Append new value as well as last value to blockchain.
 
         Arguments:
             :sender: The sender of the coin.
             :recipient: The recipient of the coin.
             :amount: The amount of coin sent with the transaction (default = 1.0).
+            :signature: The signature of the sender.
         """
         if self.public_key == None:
             return False
@@ -137,6 +144,17 @@ class Blockchain:
         if Verification.verify_transaction(transaction, self.get_balance):
             self.__open_transaction.append(transaction)
             self.save_data()
+            if not is_receiving:
+                for node in self.__peer_nodes:
+                    url = 'http://{}/broadcast-transaction'.format(node)
+                    try:
+                        response = requests.post(url, json={
+                            'sender': sender, 'recipient': recipient, 'amount': amount, 'signature': signature})
+                        if response.status_code == 400 or response.status_code == 500:
+                            print('Transaction declined, needs to resolve')
+                            return False
+                    except requests.exceptions.ConnectionError:
+                        continue
             return True
         return False
 
