@@ -182,15 +182,29 @@ class Blockchain:
         # Resets the open_transaction to an empty list.
         self.__open_transaction = []
         self.save_data()
+        for node in self.__peer_nodes:
+            url = 'http://{}/broadcast-block'.format(node)
+            converted_block = block.__dict__.copy()
+            converted_block['transactions'] = [
+                tx.__dict__ for tx in converted_block['transactions']]
+            try:
+                response = requests.post(url, json={'block': converted_block})
+                if response.status_code == 400 or response.status_code == 500:
+                    print('BLock declined, needs to resolve')
+            except requests.exceptions.ConnectionError:
+                continue
         return block
 
     def add_block(self, block):
-        transactions = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
-        proof_is_valid = Verification.valid_proof(transactions, block['previous_hash'], block['proof'])
+        transactions = [Transaction(
+            tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
+        proof_is_valid = Verification.valid_proof(
+            transactions, block['previous_hash'], block['proof'])
         hashes_matched = hash_block(self.chain[-1]) == block['previous_hash']
         if not proof_is_valid or not hashes_matched:
             return False
-        converted_block = Block(block['index'], block['previous_hash'], transactions, block['proof'], block['timestamp'])
+        converted_block = Block(
+            block['index'], block['previous_hash'], transactions, block['proof'], block['timestamp'])
         self.__chain.append(converted_block)
         self.save_data()
         return True
