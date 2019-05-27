@@ -12,4 +12,4 @@ First install requirements or all the dependencies by executing <br>
 > python3 node.py (for UNIX/MAC) <br>
 ---
 <h3>Flask</h3>
-> python node.py -p [port_number]
+> python node.py -p [port_number] (default_port - 5000)
