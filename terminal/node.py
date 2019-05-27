@@ -4,17 +4,18 @@ from blockChain import Blockchain
 from utility.verification import Verification
 from wallet import Wallet
 
+
 class Node:
 
     def __init__(self):
-        #self.id = str(uuid4())
+        # self.id = str(uuid4())
         self.wallet = Wallet()
         self.wallet.create_keys()
         self.blockchain = Blockchain(self.wallet.public_key)
-        
 
     def get_transaction_value(self):
-        """Returns the input of the user (a new transaction amount) as a float."""
+        """Returns the input of the user (a new transaction amount) as a float.
+        """
         tx_recipient = input("Enter the recipient of the transaction: ")
         tx_amount = float(input("Your Transaction amount ----> "))
         return tx_recipient, tx_amount
@@ -52,8 +53,14 @@ class Node:
                 tx_data = self.get_transaction_value()
                 recipient, amount = tx_data
                 # Add the transaction amount to the blockchain.
-                signature = self.wallet.sign_transaction(self.wallet.public_key, recipient, amount)
-                if self.blockchain.add_transaction(recipient, sender = self.wallet.public_key, signature = signature, amount=amount):
+                signature = self.wallet.sign_transaction(
+                    self.wallet.public_key, recipient, amount)
+                if self.blockchain.add_transaction(
+                    recipient,
+                    sender=self.wallet.public_key,
+                    signature=signature,
+                    amount=amount
+                ):
                     print("Added Transaction!!")
                 else:
                     print("Transaction Failed!")
@@ -67,7 +74,10 @@ class Node:
                 self.print_blockchian_elements()
 
             elif user_choice == '4':
-                if Verification.verify_transactions(self.blockchain.get_open_transaction(), self.blockchain.get_balance):
+                if Verification.verify_transactions(
+                    self.blockchain.get_open_transaction(),
+                    self.blockchain.get_balance
+                ):
                     print('All transactions are valid!')
                 else:
                     print('There are invalid transactions!')
@@ -98,7 +108,9 @@ class Node:
                 break
 
             print('Balance of {}: {:6.4f}'.format(
-                self.wallet.public_key, self.blockchain.get_balance()))
+                self.wallet.public_key, self.blockchain.get_balance()
+            )
+            )
         else:
             print("User Logged Out!")
 
