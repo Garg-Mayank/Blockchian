@@ -53,7 +53,6 @@ def load_keys():
             'message': "Loading the keys failed"
         }
         return jsonify(response), 500
-    pass
 
 
 @app.route('/balance', methods=['GET'])
@@ -114,12 +113,22 @@ def broadcast_block():
         return jsonify(response), 400
     block = values['block']
     if block['index'] == blockchain.chain[-1].index + 1:
-        blockchain.add_block(block)
+        if blockchain.add_block(block):
+            response = {'message': 'Block added'}
+            return jsonify(response), 201
+        else:
+            response = {'message': 'Block invalid'}
+            return jsonify(response), 500
     elif block['index'] > blockchain.chain[-1].index:
-        pass
+        response = {
+            'message': 'Blockchain seems to differ from local blockchain.'}
+        blockchain.resolve_conflicts = True
+        return jsonify(response), 200
     else:
-        response = {'message': 'Blockchain seems to be shorter, block not added'}
+        response = {
+            'message': 'Blockchain seems to be shorter, block not added'}
         return jsonify(response), 409
+
 
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
@@ -168,7 +177,9 @@ def add_transaction():
 @app.route('/mine', methods=['POST'])
 def mine():
     block = blockchain.mine_block()
-
+    if blockchain.resolve_conflicts:
+        response = {'message': 'Resolve conflicts first, block not added!'}
+        return jsonify(response), 409
     if block != None:
         dict_block = block.__dict__.copy()
         dict_block['transactions'] = [
@@ -186,6 +197,16 @@ def mine():
         }
         return jsonify(response), 500
 
+
+@app.route('/resolve-conflicts', methods=['POST'])
+def resolve_conflicts():
+    replaced = blockchain.resolve()
+    if replaced:
+        response = {'message': 'Chain was replaced!'}
+    else:
+        response = {'message': 'Local chain kept!'}
+    return jsonify(response), 200
+    
 
 @app.route('/transactions', methods=['GET'])
 def get_open_transactions():
