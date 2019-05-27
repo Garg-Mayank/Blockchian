@@ -4,6 +4,7 @@ from blockChain import Blockchain
 from utility.verification import Verification
 from wallet import Wallet
 
+
 class Node:
 
     def __init__(self):
@@ -11,7 +12,6 @@ class Node:
         self.wallet = Wallet()
         self.wallet.create_keys()
         self.blockchain = Blockchain(self.wallet.public_key)
-        
 
     def get_transaction_value(self):
         """Returns the input of the user (a new transaction amount) as a float."""
@@ -52,8 +52,9 @@ class Node:
                 tx_data = self.get_transaction_value()
                 recipient, amount = tx_data
                 # Add the transaction amount to the blockchain.
-                signature = self.wallet.sign_transaction(self.wallet.public_key, recipient, amount)
-                if self.blockchain.add_transaction(recipient, sender = self.wallet.public_key, signature = signature, amount=amount):
+                signature = self.wallet.sign_transaction(
+                    self.wallet.public_key, recipient, amount)
+                if self.blockchain.add_transaction(recipient, sender=self.wallet.public_key, signature=signature, amount=amount):
                     print("Added Transaction!!")
                 else:
                     print("Transaction Failed!")
